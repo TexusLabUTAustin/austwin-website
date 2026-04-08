@@ -56,6 +56,43 @@
   justify-content: center;
 }
 
+@keyframes interactiveHintPulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+}
+
+.interactiveHint {
+  margin: 0;
+  padding: clamp(8px, 1.1dvh, 14px) clamp(14px, 2.8vw, 24px);
+  max-width: min(32rem, 100%);
+  text-align: center;
+  font-size: clamp(13px, 1.35dvh + 0.6vw, 19px);
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  color: #3a5a9e;
+  text-transform: uppercase;
+  background: #eef4fc;
+  border: 1px solid #c8daf0;
+  border-radius: clamp(10px, 2vmin, 14px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  animation: interactiveHintPulse 2.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactiveHint {
+    animation: none;
+    opacity: 0.9;
+  }
+}
+
 .diagramWrapper {
   flex: 0 1 auto;
   overflow: visible;

@@ -29,7 +29,10 @@ const NODE_PANEL: Record<
     accent: '#2a8fd4',
     links: [
       { label: 'Thermalscape', href: '/thermalscape' },
-      { label: 'CoolPath', href: '#' },
+      {
+        label: 'CoolPath',
+        href: 'https://coolest-route-planner.vercel.app/',
+      },
     ],
   },
   users: {
@@ -558,6 +561,9 @@ export default function AusTwinOnePager() {
 
       <div className={styles.right}>
         <div className={styles.rightSection}>
+          <p className={styles.interactiveHint}>
+            Click the nodes to view links!
+          </p>
           <div className={styles.diagramWrapper}>
             <div
               ref={diagramCanvasRef}
@@ -707,6 +713,8 @@ export default function AusTwinOnePager() {
                           key={link.label}
                           to={link.href}
                           className={styles.panelLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
                           {row}
                         </Link>
@@ -717,6 +725,8 @@ export default function AusTwinOnePager() {
                         key={link.label}
                         href={link.href}
                         className={styles.panelLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         {row}
                       </a>
