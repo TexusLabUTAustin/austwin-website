@@ -29,10 +29,7 @@ const NODE_PANEL: Record<
     accent: '#2a8fd4',
     links: [
       { label: 'Thermalscape', href: '/thermalscape' },
-      {
-        label: 'CoolPath',
-        href: 'https://coolest-route-planner.vercel.app/',
-      },
+      { label: 'CoolPath', href: '/coolpath' },
     ],
   },
   users: {
@@ -67,6 +64,9 @@ const NODE_HOVER: Record<NodeKey, { blurb: string }> = {
       'Scenario views, dashboards, policy planners, and reports from integrated outputs.',
   },
 }
+
+/** Must be ≥ longest panel transition in OnePager.module.css (close animation). */
+const PANEL_EXIT_MS = 520
 
 const HINT_WIDTH = 220
 const HINT_HEIGHT_EST = 118
@@ -438,7 +438,7 @@ export default function AusTwinOnePager() {
       closeTimeoutRef.current = window.setTimeout(() => {
         setClosingKey(null)
         closeTimeoutRef.current = null
-      }, 220)
+      }, PANEL_EXIT_MS)
       return
     }
 
@@ -464,7 +464,7 @@ export default function AusTwinOnePager() {
       closeTimeoutRef.current = window.setTimeout(() => {
         setClosingKey(null)
         closeTimeoutRef.current = null
-      }, 220)
+      }, PANEL_EXIT_MS)
     } else {
       setClosingKey(null)
       setPanelEntered(false)
