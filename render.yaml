@@ -1,0 +1,12 @@
+services:
+  cityforesight:
+    type: web
+    runtime: docker
+    dockerfilePath: ./services/cityforesight/Dockerfile
+    dockerContext: ./services/cityforesight
+    healthCheckPath: /health
+    envVars:
+      - key: CITYFORESIGHT_DATA_DIR
+        value: /app/data
+      - key: CITYFORESIGHT_ARTIFACTS_DIR
+        value: /app/artifacts

@@ -1,0 +1,30 @@
+# AusTwin monorepo — single conda env for CityForesight + UrbanSense + CityGuide
+# Create/update: npm run setup
+# Then: conda activate austwin && npm start
+name: austwin
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - numpy>=1.26,<2.1
+  - pandas>=2.2
+  - scikit-learn>=1.5
+  - geopandas>=1.0
+  - rasterio>=1.4
+  - pytorch>=2.5
+  - pip:
+      - fastapi>=0.115.0
+      - uvicorn[standard]>=0.32.0
+      - requests>=2.32.0
+      - httpx>=0.27.0
+      - pydantic>=2.9.0
+      - pydantic-settings>=2.6.0
+      - apscheduler>=3.10.0
+      - python-multipart>=0.0.12
+      - rdflib>=7.0.0
+      - pytest>=8.0.0
+      # CityGuide (Agent 3) — local open-source LLM + RAG, no paid APIs / tokens
+      - sentence-transformers>=3.0.0
+      - huggingface-hub>=0.24.0
+      - llama-cpp-python>=0.3.0

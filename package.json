@@ -1,31 +1,32 @@
 {
-  "name": "austwin-web-app",
+  "name": "austwin-website",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.14.0"
+    "setup": "bash scripts/setup-conda.sh && npm install",
+    "prestart": "bash scripts/check-api-ports.sh",
+    "predev": "bash scripts/check-api-ports.sh",
+    "start": "npm run dev",
+    "dev": "concurrently -n web,cf,us,cg -c blue,green,magenta,cyan \"npm run dev -w apps/web\" \"npm run dev:api\" \"npm run dev:sense\" \"npm run dev:guide\"",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:api": "bash scripts/run-conda.sh bash scripts/start-api.sh cityforesight",
+    "dev:sense": "bash scripts/run-conda.sh bash scripts/start-api.sh urbansense",
+    "dev:guide": "bash scripts/run-conda.sh bash scripts/start-api.sh cityguide",
+    "build": "npm run build -w apps/web",
+    "lint": "npm run lint -w apps/web",
+    "data:fetch": "bash scripts/run-conda.sh bash -c 'cd services/cityforesight && python scripts/fetch_data.py'",
+    "train:baseline": "bash scripts/run-conda.sh bash -c 'cd services/cityforesight && python training/train_baseline.py'",
+    "train:kil": "bash scripts/run-conda.sh bash -c 'cd services/cityforesight && python training/train_kil.py'",
+    "eval": "bash scripts/run-conda.sh bash -c 'cd services/cityforesight && python training/evaluate.py'",
+    "train:all": "npm run train:baseline && npm run train:kil && npm run eval",
+    "ontology:build": "bash scripts/run-conda.sh bash -c 'cd services/urbansense && python scripts/build_ontology.py'",
+    "eval:sense": "bash scripts/run-conda.sh bash -c 'cd services/urbansense && python scripts/evaluate_anomalies.py'"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/node": "^24.12.2",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.4.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.4"
+    "concurrently": "^9.2.1"
   }
 }

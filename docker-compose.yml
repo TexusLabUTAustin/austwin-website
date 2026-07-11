@@ -1,0 +1,45 @@
+services:
+  api:
+    build:
+      context: ./services/cityforesight
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/cityforesight/artifacts:/app/artifacts
+      - ./data:/app/data
+    environment:
+      - CITYFORESIGHT_DATA_DIR=/app/data
+      - CITYFORESIGHT_ARTIFACTS_DIR=/app/artifacts
+    env_file:
+      - .env
+
+  sense:
+    build:
+      context: ./services/urbansense
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./services/urbansense/artifacts:/app/artifacts
+      - ./data:/app/data
+    environment:
+      - URBANSENSE_DATA_DIR=/app/data
+      - URBANSENSE_ARTIFACTS_DIR=/app/artifacts
+      - URBANSENSE_CITYFORESIGHT_URL=http://api:8000
+    env_file:
+      - .env
+    depends_on:
+      - api
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - api
+      - sense

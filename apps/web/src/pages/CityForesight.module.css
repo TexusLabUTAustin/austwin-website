@@ -1,0 +1,483 @@
+.page {
+  min-height: 100dvh;
+  overflow-y: auto;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  background: linear-gradient(180deg, #fbfcfe 0%, #f4f8fc 45%, #eef4fa 100%);
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+.header {
+  max-width: 1100px;
+  margin: 0 auto 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.backLink {
+  color: #2a8fd4;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  align-self: flex-start;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.headerMain {
+  text-align: left;
+}
+
+.title {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 800;
+  color: #1a3c8f;
+  letter-spacing: -0.02em;
+}
+
+.titleAccent {
+  color: #2a8fd4;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 36rem;
+  line-height: 1.5;
+  color: #64748b;
+  font-size: 0.925rem;
+}
+
+.status,
+.error {
+  text-align: center;
+  padding: 1rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.dashboard {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.mapCard {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(26, 60, 143, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(26, 60, 143, 0.06);
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(26, 60, 143, 0.08);
+  background: rgba(248, 251, 255, 0.9);
+}
+
+.horizonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.searchGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 280px;
+  min-width: min(100%, 280px);
+  max-width: 420px;
+}
+
+.searchRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(26, 60, 143, 0.18);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #fff;
+}
+
+.searchInput:focus {
+  outline: 2px solid rgba(42, 143, 212, 0.35);
+  border-color: #2a8fd4;
+}
+
+.searchButton {
+  border: 1px solid #2a8fd4;
+  background: #2a8fd4;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.searchButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.searchDisclaimer {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.searchError {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #b91c1c;
+}
+
+.searchCandidates {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.searchCandidateBtn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(26, 60, 143, 0.12);
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.72rem;
+  color: #334155;
+  cursor: pointer;
+}
+
+.searchCandidateBtn:hover {
+  border-color: #2a8fd4;
+  background: rgba(42, 143, 212, 0.06);
+}
+
+.panelDisclaimer {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #64748b;
+  background: rgba(248, 251, 255, 0.95);
+  border: 1px solid rgba(26, 60, 143, 0.1);
+  border-radius: 8px;
+  font-style: italic;
+}
+
+.panelAddress {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.toolbarLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #64748b;
+}
+
+.horizonPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.horizonPill {
+  border: 1px solid rgba(26, 60, 143, 0.18);
+  background: #fff;
+  color: #1a3c8f;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.horizonPill:hover {
+  border-color: #2a8fd4;
+  background: rgba(42, 143, 212, 0.08);
+}
+
+.horizonPillActive {
+  background: #2a8fd4;
+  border-color: #2a8fd4;
+  color: #fff;
+}
+
+.mapRow {
+  display: grid;
+  grid-template-columns: 1fr minmax(220px, 280px);
+  gap: 0;
+  height: clamp(360px, 58vh, 600px);
+}
+
+.mapRow > :first-child {
+  min-height: 0;
+  height: 100%;
+}
+
+.tractPanel {
+  position: relative;
+  padding: 1.25rem 1rem;
+  border-left: 1px solid rgba(26, 60, 143, 0.08);
+  background: #fbfdff;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.tractHero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.tractHeroValue {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tractHeroLabel {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.insightLine {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.insightLine strong {
+  color: #1a3c8f;
+}
+
+.morphGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem 0.75rem;
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.75rem;
+  background: rgba(248, 251, 255, 0.95);
+  border-radius: 8px;
+  border: 1px solid rgba(26, 60, 143, 0.08);
+  overflow: visible;
+}
+
+.tractClose {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.tractClose:hover {
+  background: rgba(26, 60, 143, 0.06);
+  color: #1a3c8f;
+}
+
+.tractPanel h2 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: #1a3c8f;
+  padding-right: 1.5rem;
+}
+
+.tractHint {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.tractList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tractList li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.45rem 0.5rem;
+  margin: 0 -0.5rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.tractList li + li {
+  margin-top: 0.15rem;
+}
+
+.tractListActive {
+  background: rgba(42, 143, 212, 0.12);
+  color: #1a3c8f;
+  font-weight: 600;
+}
+
+.mapHint {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem 1.25rem;
+  border-left: 1px solid rgba(26, 60, 143, 0.08);
+  background: #f8fafc;
+}
+
+.hintTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a3c8f;
+}
+
+.mapHint p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.hintStats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(26, 60, 143, 0.08);
+}
+
+.hintStats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.hintStatLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.hintStatValue {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  border-top: 1px solid rgba(26, 60, 143, 0.08);
+  background: rgba(248, 251, 255, 0.6);
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #15803d;
+  background: rgba(34, 197, 94, 0.12);
+  border-radius: 999px;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+.metaMuted {
+  color: #cbd5e1;
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  }
+}
+
+@media (max-width: 768px) {
+  .mapRow {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .mapRow > :first-child {
+    min-height: 320px;
+    height: 320px;
+  }
+
+  .tractPanel,
+  .mapHint {
+    border-left: none;
+    border-top: 1px solid rgba(26, 60, 143, 0.08);
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

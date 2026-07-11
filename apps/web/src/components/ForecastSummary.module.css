@@ -1,0 +1,88 @@
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) minmax(180px, 1.4fr);
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(26, 60, 143, 0.08);
+  background: #fff;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(248, 251, 255, 0.9);
+  border: 1px solid rgba(26, 60, 143, 0.06);
+}
+
+.statLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.statValue {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1a3c8f;
+  line-height: 1.1;
+}
+
+.statHint {
+  font-size: 0.72rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.riskBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(248, 251, 255, 0.9);
+  border: 1px solid rgba(26, 60, 143, 0.06);
+}
+
+.riskSegments {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.riskSegment {
+  min-width: 4px;
+  transition: flex 0.2s;
+}
+
+.riskLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  font-size: 0.68rem;
+  color: #64748b;
+}
+
+@media (max-width: 960px) {
+  .summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .riskBar {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary {
+    grid-template-columns: 1fr;
+  }
+}

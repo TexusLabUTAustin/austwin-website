@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vite *)",
+      "Bash(.venv/bin/python -c \"import pypdf; print\\('pypdf ok'\\)\")",
+      "Bash(.venv/bin/python -c \"import fitz; print\\('fitz ok'\\)\")",
+      "Bash(python3 -c \"import pypdf; print\\('sys pypdf'\\)\")",
+      "Bash(.venv/bin/pip install *)",
+      "Bash(.venv/bin/python -c ' *)",
+      "Bash(ollama --version)",
+      "Bash(curl -s --max-time 240 -X POST http://localhost:8012/chat -H 'Content-Type: application/json' -d '{\"message\":\"Compare the hottest and coolest tracts and explain why they differ using land cover.\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('tools',[s['title'] for s in d['sources']]\\);print\\('---'\\);print\\(d['answer']\\)\")",
+      "Bash(curl -s --max-time 200 -X POST http://localhost:8012/chat -H 'Content-Type: application/json' -d '{\"message\":\"Are there any heat anomalies at alert level or above?\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('tools',[s['title'] for s in d['sources']]\\);print\\(d['answer'][:300]\\)\")",
+      "Bash(curl -s --max-time 200 -X POST http://localhost:8012/chat -H 'Content-Type: application/json' -d '{\"message\":\"Who is the mayor of Paris?\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('refused',d['refused'],'tools',[s['title'] for s in d['sources']]\\);print\\(d['answer'][:200]\\)\")",
+      "Bash(curl -s --max-time 15 https://api.rainviewer.com/public/weather-maps.json)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('host',d['host']\\);r=d['radar'];print\\('past frames',len\\(r['past']\\),'last',r['past'][-1]\\);print\\('nowcast',len\\(r.get\\('nowcast',[]\\)\\)\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 20 \"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_GeoColor/default/2026-07-10T18:00:00Z/GoogleMapsCompatible_Level8/3/3/2.png\")",
+      "Bash(curl -s --max-time 20 'https://data.austintexas.gov/resource/b4k4-adkb.json?$limit=2')",
+      "Bash(curl -s --max-time 300 -X POST http://localhost:8012/chat -H 'Content-Type: application/json' -d '{\"message\":\"Give me a full climate briefing for Austin right now: current conditions, air quality, the single hottest forecast tract, and whether any weather alerts are active.\"}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('tools:',[s['title'] for s in d['sources']]\\);print\\('---'\\);print\\(d['answer']\\)\")"
+    ]
+  }
+}
