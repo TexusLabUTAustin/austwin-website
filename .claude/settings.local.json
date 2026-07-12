@@ -19,7 +19,15 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 20 \"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_GeoColor/default/2026-07-10T18:00:00Z/GoogleMapsCompatible_Level8/3/3/2.png\")",
       "Bash(curl -s --max-time 20 'https://data.austintexas.gov/resource/b4k4-adkb.json?$limit=2')",
       "Bash(curl -s --max-time 300 -X POST http://localhost:8012/chat -H 'Content-Type: application/json' -d '{\"message\":\"Give me a full climate briefing for Austin right now: current conditions, air quality, the single hottest forecast tract, and whether any weather alerts are active.\"}')",
-      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('tools:',[s['title'] for s in d['sources']]\\);print\\('---'\\);print\\(d['answer']\\)\")"
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('tools:',[s['title'] for s in d['sources']]\\);print\\('---'\\);print\\(d['answer']\\)\")",
+      "Bash(conda run *)",
+      "Bash(grep -nE 'met_file|loadtxt|genfromtxt|read_csv|Ta =|RH =|,[0-9]+\\\\]|Kdn|press|Ws|wind|:,[0-9]' __CMDSUB_OUTPUT__/sun_position.py)",
+      "Bash(conda install *)",
+      "Bash(npx tsc *)",
+      "Bash(THERMALSCAPE_DEV_PORT=8013 conda run -n austwin python -m uvicorn app.main:app --host 0.0.0.0 --port 8013)",
+      "Bash(curl -s --max-time 5 http://localhost:8013/health)",
+      "Bash(curl -s --max-time 5 http://localhost:8013/utci)",
+      "Bash(curl -s -o /dev/null -w \"png HTTP %{http_code} type %{content_type} size %{size_download}\\\\n\" --max-time 5 http://localhost:8013/utci.png)"
     ]
   }
 }

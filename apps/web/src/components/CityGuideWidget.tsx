@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { sendChat, type ChatSource } from '../lib/guideApi'
+import { sendChat } from '../lib/guideApi'
 import styles from './CityGuideWidget.module.css'
 
 type Message = {
   role: 'user' | 'assistant'
   text: string
-  sources?: ChatSource[]
   refused?: boolean
-  usedLive?: string[]
   model?: string
+}
+
+type Props = {
+  /** Render in the page chrome instead of as a floating bottom-right button. */
+  placement?: 'fab' | 'header'
 }
 
 const SUGGESTIONS = [
@@ -26,13 +29,14 @@ const GREETING: Message = {
     "if I'm not sure, I'll say so.",
 }
 
-export default function CityGuideWidget() {
+export default function CityGuideWidget({ placement = 'fab' }: Props) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([GREETING])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const header = placement === 'header'
 
   useEffect(() => {
     if (open) {
@@ -54,9 +58,7 @@ export default function CityGuideWidget() {
         {
           role: 'assistant',
           text: res.answer,
-          sources: res.sources,
           refused: res.refused,
-          usedLive: res.used_live,
           model: res.model,
         },
       ])
@@ -68,9 +70,13 @@ export default function CityGuideWidget() {
   }
 
   return (
-    <div className={styles.root}>
+    <div className={header ? styles.rootHeader : styles.root}>
       {open && (
-        <div className={styles.panel} role="dialog" aria-label="CityGuide chatbot">
+        <div
+          className={`${styles.panel} ${header ? styles.panelHeaderAnchor : ''}`}
+          role="dialog"
+          aria-label="CityGuide chatbot"
+        >
           <header className={styles.panelHeader}>
             <div className={styles.panelTitle}>
               <span className={styles.dot} aria-hidden="true" />
@@ -98,29 +104,6 @@ export default function CityGuideWidget() {
                 }`}
               >
                 <div className={styles.msgText}>{m.text}</div>
-                {m.usedLive && m.usedLive.length > 0 && (
-                  <div className={styles.chipRow}>
-                    {m.usedLive.map((l) => (
-                      <span key={l} className={styles.liveTag}>
-                        ● live · {l}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {m.sources && m.sources.length > 0 && (
-                  <div className={styles.chipRow}>
-                    {m.sources.map((s, j) => (
-                      <span
-                        key={j}
-                        className={`${styles.sourceChip} ${
-                          s.type === 'live' ? styles.sourceLive : styles.sourceDoc
-                        }`}
-                      >
-                        {s.title}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             ))}
             {loading && (
@@ -175,20 +158,33 @@ export default function CityGuideWidget() {
 
       <button
         type="button"
-        className={`${styles.fab} ${open ? styles.fabClose : styles.fabOpen}`}
+        className={
+          header
+            ? `${styles.headerBtn} ${open ? styles.headerBtnOpen : ''}`
+            : `${styles.fab} ${open ? styles.fabClose : styles.fabOpen}`
+        }
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? 'Close CityGuide chatbot' : 'Open CityGuide chatbot'}
         aria-expanded={open}
       >
         {open ? (
-          '×'
+          header ? (
+            <>
+              <ChatIcon />
+              <span>Close</span>
+            </>
+          ) : (
+            '×'
+          )
         ) : (
           <>
             <ChatIcon />
-            <span className={styles.fabLabel}>Ask CityGuide</span>
+            <span className={header ? undefined : styles.fabLabel}>
+              {header ? 'Ask CityGuide' : 'Ask CityGuide'}
+            </span>
           </>
         )}
-        {!open && <span className={styles.fabPulse} aria-hidden="true" />}
+        {!open && !header && <span className={styles.fabPulse} aria-hidden="true" />}
       </button>
     </div>
   )
@@ -196,7 +192,7 @@ export default function CityGuideWidget() {
 
 function ChatIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8A2.5 2.5 0 0 1 17.5 16H9l-4 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-8Z"
         fill="currentColor"

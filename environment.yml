@@ -1,4 +1,4 @@
-# AusTwin monorepo — single conda env for CityForesight + UrbanSense + CityGuide
+# AusTwin monorepo — single conda env: CityForesight + UrbanSense + CityGuide + Thermalscape
 # Create/update: npm run setup
 # Then: conda activate austwin && npm start
 name: austwin
@@ -13,6 +13,11 @@ dependencies:
   - geopandas>=1.0
   - rasterio>=1.4
   - pytorch>=2.5
+  # Thermalscape (SOLWEIG-GPU) needs GDAL Python bindings (osgeo)
+  - gdal>=3.8
+  - shapely>=2.0
+  - pyproj>=3.6
+  - pillow>=10.0
   - pip:
       - fastapi>=0.115.0
       - uvicorn[standard]>=0.32.0
@@ -28,3 +33,5 @@ dependencies:
       - sentence-transformers>=3.0.0
       - huggingface-hub>=0.24.0
       - llama-cpp-python>=0.3.0
+      # Thermalscape — GPU-accelerated street-level thermal comfort (UTCI)
+      - solweig-gpu>=1.2.0

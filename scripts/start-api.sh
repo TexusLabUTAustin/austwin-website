@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck disable=SC1091
 source "$ROOT/scripts/ports.sh"
 
-SERVICE="${1:?service name required (cityforesight|urbansense|cityguide)}"
+SERVICE="${1:?service name required (cityforesight|urbansense|cityguide|thermalscape)}"
 
 case "$SERVICE" in
   cityforesight)
@@ -20,6 +20,10 @@ case "$SERVICE" in
   cityguide)
     cd "$ROOT/services/cityguide"
     exec python -m uvicorn app.main:app --reload --host 0.0.0.0 --port "$CITYGUIDE_DEV_PORT"
+    ;;
+  thermalscape)
+    cd "$ROOT/services/thermalscape"
+    exec python -m uvicorn app.main:app --reload --host 0.0.0.0 --port "$THERMALSCAPE_DEV_PORT"
     ;;
   *)
     echo "Unknown service: $SERVICE" >&2

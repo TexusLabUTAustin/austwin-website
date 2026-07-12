@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { sendChat, type ChatSource } from '../lib/guideApi'
+import { sendChat } from '../lib/guideApi'
 import styles from './CityGuide.module.css'
 
 type Message = {
   role: 'user' | 'assistant'
   text: string
-  sources?: ChatSource[]
   refused?: boolean
-  usedLive?: string[]
   model?: string
 }
 
@@ -54,9 +52,7 @@ export default function CityGuide() {
         {
           role: 'assistant',
           text: res.answer,
-          sources: res.sources,
           refused: res.refused,
-          usedLive: res.used_live,
           model: res.model,
         },
       ])
@@ -95,29 +91,6 @@ export default function CityGuide() {
               }`}
             >
               <div className={styles.msgText}>{m.text}</div>
-              {m.usedLive && m.usedLive.length > 0 && (
-                <div className={styles.liveRow}>
-                  {m.usedLive.map((l) => (
-                    <span key={l} className={styles.liveTag}>
-                      ● live · {l}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {m.sources && m.sources.length > 0 && (
-                <div className={styles.sources}>
-                  {m.sources.map((s, j) => (
-                    <span
-                      key={j}
-                      className={`${styles.sourceChip} ${
-                        s.type === 'live' ? styles.sourceLive : styles.sourceDoc
-                      }`}
-                    >
-                      {s.title}
-                    </span>
-                  ))}
-                </div>
-              )}
               {m.model && m.model !== 'guardrail' && (
                 <div className={styles.modelTag}>{m.model}</div>
               )}

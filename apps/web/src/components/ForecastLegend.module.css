@@ -1,13 +1,14 @@
 .legend {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.9);
+  gap: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: rgba(255, 255, 255, 0.94);
   border-radius: 10px;
-  border: 1px solid rgba(26, 60, 143, 0.12);
-  font-size: 0.8rem;
+  border: 1px solid rgba(26, 60, 143, 0.14);
+  font-size: 0.75rem;
   color: #334155;
+  backdrop-filter: blur(4px);
 }
 
 .title {

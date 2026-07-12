@@ -14,9 +14,11 @@ const DISCLAIMER =
 type Props = {
   onResolved: (result: AddressSearchResult) => void
   disabled?: boolean
+  /** Single-row search for the top toolbar (no label / disclaimer). */
+  compact?: boolean
 }
 
-export default function AddressSearch({ onResolved, disabled }: Props) {
+export default function AddressSearch({ onResolved, disabled, compact }: Props) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,13 +73,13 @@ export default function AddressSearch({ onResolved, disabled }: Props) {
   }
 
   return (
-    <div className={styles.searchGroup}>
-      <span className={styles.toolbarLabel}>Find your area</span>
+    <div className={compact ? styles.searchCompact : styles.searchGroup}>
+      {!compact && <span className={styles.toolbarLabel}>Find your area</span>}
       <form className={styles.searchRow} onSubmit={onSubmit}>
         <input
           type="search"
           className={styles.searchInput}
-          placeholder="Enter address or place in Austin"
+          placeholder={compact ? 'Search Austin address…' : 'Enter address or place in Austin'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           disabled={disabled || loading}
@@ -88,17 +90,20 @@ export default function AddressSearch({ onResolved, disabled }: Props) {
           className={styles.searchButton}
           disabled={disabled || loading}
         >
-          {loading ? 'Searching…' : 'Search'}
+          {loading ? '…' : 'Go'}
         </button>
       </form>
-      <p className={styles.searchDisclaimer}>{DISCLAIMER}</p>
+      {!compact && <p className={styles.searchDisclaimer}>{DISCLAIMER}</p>}
       {error && (
         <p className={styles.searchError} role="alert">
           {error}
         </p>
       )}
       {candidates && candidates.length > 1 && (
-        <ul className={styles.searchCandidates} aria-label="Matching addresses">
+        <ul
+          className={`${styles.searchCandidates} ${compact ? styles.searchCandidatesFloat : ''}`}
+          aria-label="Matching addresses"
+        >
           {candidates.map((c) => (
             <li key={`${c.lat}-${c.lon}`}>
               <button

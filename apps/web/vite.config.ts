@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const cfPort = env.CITYFORESIGHT_DEV_PORT || '8000'
   const usPort = env.URBANSENSE_DEV_PORT || '8001'
   const cgPort = env.CITYGUIDE_DEV_PORT || '8002'
+  const tsPort = env.THERMALSCAPE_DEV_PORT || '8003'
 
   return {
     plugins: [
@@ -26,6 +27,11 @@ export default defineConfig(({ mode }) => {
           target: `http://localhost:${cgPort}`,
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/api\/guide/, ''),
+        },
+        '/api/thermal': {
+          target: `http://localhost:${tsPort}`,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api\/thermal/, ''),
         },
         '/api/sense': {
           target: `http://localhost:${usPort}`,

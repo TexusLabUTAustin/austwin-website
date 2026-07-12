@@ -3,12 +3,16 @@ import * as Cesium from 'cesium'
 import type { FeatureCollection } from 'geojson'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { heatIndexColor } from '../lib/forecastUtils'
+import { fetchUtciMeta, sampleUtciAt } from '../lib/thermalApi'
+import { inUtciBounds, utciInsightLine, type UtciMeta, type UtciSample } from '../lib/utciUtils'
 import type { MapPin } from './ForecastMap'
+import UtciInsightPanel from './UtciInsightPanel'
 import {
   fetchCameras,
   makeGoesLayer,
   makeRadarLayer,
   makeTrafficLayer,
+  makeUtciLayer,
   type CameraPoint,
 } from './liveLayers'
 import styles from './ForecastMap.module.css'
@@ -85,15 +89,27 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
   const [clock, setClock] = useState('')
 
   // Real-time "city now" overlays.
-  const [live, setLive] = useState({ radar: false, goes: false, traffic: false, cams: false })
+  const [live, setLive] = useState({
+    radar: false, goes: false, traffic: false, cams: false, utci: false,
+  })
   const radarLayerRef = useRef<Cesium.ImageryLayer | null>(null)
   const goesLayerRef = useRef<Cesium.ImageryLayer | null>(null)
   const trafficLayerRef = useRef<Cesium.ImageryLayer | null>(null)
+  const utciLayerRef = useRef<Cesium.ImageryLayer | null>(null)
+  const utciSampleEntityRef = useRef<Cesium.Entity | null>(null)
   const camsDsRef = useRef<Cesium.CustomDataSource | null>(null)
   const camByEntityRef = useRef<Map<string, CameraPoint>>(new Map())
   const [activeCam, setActiveCam] = useState<CameraPoint | null>(null)
+  const [utciMeta, setUtciMeta] = useState<UtciMeta | null>(null)
+  const [utciSample, setUtciSample] = useState<UtciSample | null>(null)
+  const [utciSampling, setUtciSampling] = useState(false)
+  const [utciSampleError, setUtciSampleError] = useState<string | null>(null)
+  const liveRef = useRef(live)
+  const utciMetaRef = useRef<UtciMeta | null>(null)
+  liveRef.current = live
+  utciMetaRef.current = utciMeta
 
-  const toggleLive = useCallback((key: 'radar' | 'goes' | 'traffic' | 'cams') => {
+  const toggleLive = useCallback((key: 'radar' | 'goes' | 'traffic' | 'cams' | 'utci') => {
     setLive((s) => ({ ...s, [key]: !s[key] }))
   }, [])
   const viewRef = useRef({ heading: 0, pitch: PITCH_TILTED, range: 40000, base: 40000 })
@@ -113,35 +129,48 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
     })
   }, [])
 
-  const zoom = useCallback((factor: number) => {
+  const pauseDrone = useCallback(() => {
+    droneRef.current = false
     setDrone(false)
+    const viewer = viewerRef.current
+    const sphere = sphereRef.current
+    if (viewer && sphere && droneLockedRef.current) {
+      viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY)
+      droneLockedRef.current = false
+      const dist = Cesium.Cartesian3.distance(viewer.camera.position, sphere.center)
+      viewRef.current.range = Cesium.Math.clamp(dist, viewRef.current.base * 0.12, viewRef.current.base * 3)
+    }
+  }, [])
+
+  const zoom = useCallback((factor: number) => {
+    pauseDrone()
     const v = viewRef.current
     v.range = Cesium.Math.clamp(v.range * factor, v.base * 0.12, v.base * 3)
     applyView(0.5)
-  }, [applyView])
+  }, [applyView, pauseDrone])
 
   const rotate = useCallback((deg: number) => {
-    setDrone(false)
+    pauseDrone()
     const v = viewRef.current
     v.heading += Cesium.Math.toRadians(deg)
     applyView(0.6)
-  }, [applyView])
+  }, [applyView, pauseDrone])
 
   const toggleTilt = useCallback(() => {
-    setDrone(false)
+    pauseDrone()
     const v = viewRef.current
     v.pitch = v.pitch < PITCH_TOP + 0.02 ? PITCH_TILTED : PITCH_TOP
     applyView(0.8)
-  }, [applyView])
+  }, [applyView, pauseDrone])
 
   const resetView = useCallback(() => {
-    setDrone(false)
+    pauseDrone()
     const v = viewRef.current
     v.heading = 0
     v.pitch = PITCH_TILTED
     v.range = v.base
     applyView(1.0)
-  }, [applyView])
+  }, [applyView, pauseDrone])
 
   const toggleBuildings = useCallback(() => {
     const b = osmBuildingsRef.current
@@ -231,6 +260,9 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
         .catch(() => undefined)
     }
 
+    const onWheel = () => pauseDrone()
+    viewer.scene.canvas.addEventListener('wheel', onWheel, { passive: true })
+
     // Live drone orbit: each frame, sweep the camera around the city center.
     const removeTick = viewer.clock.onTick.addEventListener(() => {
       const sphere = sphereRef.current
@@ -253,20 +285,57 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
       }
     })
 
-    // Tract picking.
+    // Tract picking + UTCI point sampling.
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
-    handler.setInputAction((e: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+    handler.setInputAction(async (e: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
       const picked = viewer.scene.pick(e.position)
       const id = picked?.id as Cesium.Entity | undefined
       if (id && camByEntityRef.current.has(id.id)) {
         setActiveCam(camByEntityRef.current.get(id.id) ?? null)
         return
       }
+
+      const ray = viewer.camera.getPickRay(e.position)
+      const cartesian = ray ? viewer.scene.globe.pick(ray, viewer.scene) : undefined
+      if (cartesian && liveRef.current.utci && utciMetaRef.current?.bounds) {
+        const carto = Cesium.Cartographic.fromCartesian(cartesian)
+        const lat = Cesium.Math.toDegrees(carto.latitude)
+        const lon = Cesium.Math.toDegrees(carto.longitude)
+        if (inUtciBounds(lat, lon, utciMetaRef.current.bounds)) {
+          pauseDrone()
+          setUtciSampling(true)
+          setUtciSampleError(null)
+          const sample = await sampleUtciAt(lat, lon).catch(() => null)
+          setUtciSampling(false)
+          if (sample) {
+            setUtciSample(sample)
+            if (utciSampleEntityRef.current) {
+              viewer.entities.remove(utciSampleEntityRef.current)
+            }
+            utciSampleEntityRef.current = viewer.entities.add({
+              position: Cesium.Cartesian3.fromDegrees(lon, lat),
+              point: {
+                pixelSize: 11,
+                color: Cesium.Color.fromCssColorString('#fbbf24'),
+                outlineColor: Cesium.Color.BLACK,
+                outlineWidth: 2,
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                disableDepthTestDistance: Number.POSITIVE_INFINITY,
+              },
+            })
+          } else {
+            setUtciSampleError('No UTCI value here (nodata or outside tile).')
+          }
+          return
+        }
+      }
+
       const geoid = id?.properties?.GEOID?.getValue?.()
       if (geoid && onSelectRef.current) onSelectRef.current(String(geoid))
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
 
     return () => {
+      viewer.scene.canvas.removeEventListener('wheel', onWheel)
       removeTick()
       handler.destroy()
       viewer.destroy()
@@ -390,6 +459,50 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
     return remove
   }, [live.traffic])
 
+  // Street-level UTCI thermal-comfort tile (SOLWEIG-GPU).
+  useEffect(() => {
+    const viewer = viewerRef.current
+    if (!viewer) return
+    let cancelled = false
+    const remove = () => {
+      if (utciLayerRef.current) {
+        viewer.imageryLayers.remove(utciLayerRef.current, true)
+        utciLayerRef.current = null
+      }
+    }
+    const clearSample = () => {
+      if (utciSampleEntityRef.current) {
+        viewer.entities.remove(utciSampleEntityRef.current)
+        utciSampleEntityRef.current = null
+      }
+      setUtciSample(null)
+      setUtciSampleError(null)
+      setUtciSampling(false)
+    }
+    const add = async () => {
+      const meta = await fetchUtciMeta().catch(() => null)
+      if (cancelled) return
+      setUtciMeta(meta)
+      const layer = await makeUtciLayer(viewer).catch(() => null)
+      if (cancelled) {
+        if (layer) viewer.imageryLayers.remove(layer, true)
+        return
+      }
+      utciLayerRef.current = layer
+    }
+    if (live.utci) {
+      add()
+    } else {
+      remove()
+      clearSample()
+      setUtciMeta(null)
+    }
+    return () => {
+      cancelled = true
+      remove()
+    }
+  }, [live.utci])
+
   // Live traffic cameras (Austin/TxDOT) as clickable points.
   useEffect(() => {
     const viewer = viewerRef.current
@@ -440,7 +553,7 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
       pinEntityRef.current = null
     }
     if (!pin) return
-    setDrone(false)
+    pauseDrone()
     const ent = viewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(pin.lon, pin.lat, 0),
       point: {
@@ -469,7 +582,7 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
       orientation: { pitch: PITCH_TILTED },
       duration: 1.2,
     })
-  }, [pin])
+  }, [pin, pauseDrone])
 
   return (
     <div className={styles.mapWrap}>
@@ -492,17 +605,21 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
         </div>
         <div className={styles.hudBottom}>
           <span>CAM · AERIAL ORBIT</span>
-          {telemetry && (
-            <>
-              <span>STATION KAUS</span>
-              <span>AVG HI {telemetry.avg.toFixed(1)}°F</span>
-              <span>
-                PEAK {telemetry.hotName} {telemetry.hot.toFixed(1)}°F
-              </span>
-              <span>
-                {telemetry.n} TRACTS · +{horizon}h
-              </span>
-            </>
+          {live.utci && utciMeta ? (
+            <span className={styles.hudUtci}>{utciInsightLine(utciMeta)}</span>
+          ) : (
+            telemetry && (
+              <>
+                <span>STATION KAUS</span>
+                <span>AVG HI {telemetry.avg.toFixed(1)}°F</span>
+                <span>
+                  PEAK {telemetry.hotName} {telemetry.hot.toFixed(1)}°F
+                </span>
+                <span>
+                  {telemetry.n} TRACTS · +{horizon}h
+                </span>
+              </>
+            )
           )}
         </div>
       </div>
@@ -526,6 +643,14 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
         </button>
         <button
           type="button"
+          className={`${styles.layerChip} ${live.utci ? styles.layerOn : ''}`}
+          onClick={() => toggleLive('utci')}
+          title="Street-level thermal comfort (SOLWEIG-GPU UTCI)"
+        >
+          🌡 UTCI
+        </button>
+        <button
+          type="button"
           className={`${styles.layerChip} ${live.cams ? styles.layerOn : ''}`}
           onClick={() => toggleLive('cams')}
         >
@@ -542,14 +667,26 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
         </button>
       </div>
 
+      {live.utci && (
+        <UtciInsightPanel
+          meta={utciMeta}
+          sample={utciSample}
+          sampling={utciSampling}
+          sampleError={utciSampleError}
+        />
+      )}
+
       {activeCam && <CameraPopup cam={activeCam} onClose={() => setActiveCam(null)} />}
 
       <div className={styles.globeControls} role="group" aria-label="Map controls">
         <button
           type="button"
           className={`${styles.globeBtn} ${drone ? styles.globeBtnLive : ''}`}
-          onClick={() => setDrone((d) => !d)}
-          title={drone ? 'Pause live drone view' : 'Resume live drone view'}
+          onClick={() => {
+            if (drone) pauseDrone()
+            else setDrone(true)
+          }}
+          title={drone ? 'Pause live drone view (enables zoom)' : 'Resume live drone view'}
           aria-label="Toggle live drone view"
         >
           {drone ? '⏸' : '◉'}

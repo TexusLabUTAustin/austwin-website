@@ -72,6 +72,22 @@ export async function fetchCameras(): Promise<CameraPoint[]> {
   return out
 }
 
+/** Street-level UTCI thermal-comfort tile (SOLWEIG-GPU) draped over its bounds. */
+export async function makeUtciLayer(viewer: Cesium.Viewer): Promise<Cesium.ImageryLayer | null> {
+  const meta = await fetch('/api/thermal/utci').then((r) => (r.ok ? r.json() : null))
+  if (!meta?.bounds || !meta?.png_url) return null
+  const b = meta.bounds
+  const provider = new Cesium.SingleTileImageryProvider({
+    url: meta.png_url,
+    rectangle: Cesium.Rectangle.fromDegrees(b.west, b.south, b.east, b.north),
+    tileWidth: 256,
+    tileHeight: 256,
+  })
+  const layer = viewer.imageryLayers.addImageryProvider(provider)
+  layer.alpha = 0.85
+  return layer
+}
+
 /** Round to the most recent 10-minute GOES slot, with lag for availability. */
 function goesTimeIso(lagMinutes = 25): string {
   const t = Date.now() - lagMinutes * 60_000
