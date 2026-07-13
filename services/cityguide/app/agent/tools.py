@@ -15,6 +15,17 @@ from app.rag import store
 
 SEVERITY_RANK = {"normal": 0, "watch": 1, "alert": 2, "extreme": 3}
 
+HAZARD_PROP = {
+    "heat": "forecasts",
+    "flood": "flood_forecasts",
+    "grid": "grid_forecasts",
+}
+HAZARD_NOUN = {
+    "heat": "heat index",
+    "flood": "flood risk",
+    "grid": "grid stress",
+}
+
 
 def _features(payload: dict) -> list[dict]:
     return payload.get("features", {}).get("features", [])
@@ -24,6 +35,30 @@ def _name(props: dict) -> str:
     return props.get("NAME") or props.get("GEOID") or "?"
 
 
+def _norm_hazard(hazard: Any) -> str:
+    h = str(hazard or "heat").strip().lower()
+    if h in ("flood", "flooding", "flood_risk", "flood-risk"):
+        return "flood"
+    if h in ("grid", "power", "ercot", "grid_stress", "grid-stress", "electricity"):
+        return "grid"
+    return "heat"
+
+
+def _fmt(hazard: str, v: float) -> str:
+    if hazard == "heat":
+        return f"{v:.1f}F"
+    return f"{v:.0f}/100"
+
+
+def _series(fc: dict, hazard: str) -> str:
+    if not fc:
+        return "n/a"
+    return "; ".join(
+        f"+{h}h {_fmt(hazard, float(v))}"
+        for h, v in sorted(fc.items(), key=lambda kv: int(kv[0]))
+    )
+
+
 def _resolve_geoid(needle: str) -> tuple[str | None, str | None]:
     """Map a tract name or GEOID (possibly partial) to (geoid, name)."""
     needle = str(needle).strip().lower()
@@ -31,7 +66,6 @@ def _resolve_geoid(needle: str) -> tuple[str | None, str | None]:
         feats = _features(systemdata.fetch_forecast())
     except Exception:  # noqa: BLE001
         return None, None
-    # exact geoid / name first, then substring
     for exact in (True, False):
         for f in feats:
             p = f.get("properties", {})
@@ -47,49 +81,142 @@ def _resolve_geoid(needle: str) -> tuple[str | None, str | None]:
 
 # --- Tool implementations -------------------------------------------------
 
-def rank_tracts(order: str = "hottest", horizon: Any = 1, limit: Any = 5, **_: Any) -> str:
+def rank_tracts(
+    order: str = "hottest",
+    horizon: Any = 1,
+    limit: Any = 5,
+    hazard: Any = "heat",
+    **_: Any,
+) -> str:
+    hazard = _norm_hazard(hazard)
     horizon = int(horizon or 1)
     limit = max(1, min(int(limit or 5), 20))
+    prop = HAZARD_PROP[hazard]
     rows = []
     for f in _features(systemdata.fetch_forecast()):
         p = f.get("properties", {})
-        v = (p.get("forecasts") or {}).get(str(horizon))
+        v = (p.get(prop) or {}).get(str(horizon))
         if v is not None:
             rows.append((_name(p), float(v)))
     if not rows:
-        return "No forecast data available."
-    rows.sort(key=lambda x: x[1], reverse=(order != "coolest"))
+        return f"No {hazard} forecast data available."
+    high_first = order not in ("coolest", "lowest", "least")
+    rows.sort(key=lambda x: x[1], reverse=high_first)
     picked = rows[:limit]
-    label = "Coolest" if order == "coolest" else "Hottest"
-    body = "; ".join(f"{n} {v:.1f}F" for n, v in picked)
-    return f"{label} {len(picked)} tracts at +{horizon}h: {body}."
+    if hazard == "heat":
+        label = "Coolest" if not high_first else "Hottest"
+    else:
+        label = "Lowest" if not high_first else "Highest"
+    noun = HAZARD_NOUN[hazard]
+    body = "; ".join(f"{n} {_fmt(hazard, v)}" for n, v in picked)
+    return f"{label} {len(picked)} tracts by {noun} at +{horizon}h: {body}."
 
 
-def city_summary(horizon: Any = 1, **_: Any) -> str:
+def city_summary(horizon: Any = 1, hazard: Any = "heat", **_: Any) -> str:
+    hazard = _norm_hazard(hazard)
     horizon = int(horizon or 1)
     payload = systemdata.fetch_forecast()
+    prop = HAZARD_PROP[hazard]
     vals = []
     for f in _features(payload):
-        v = (f.get("properties", {}).get("forecasts") or {}).get(str(horizon))
+        v = (f.get("properties", {}).get(prop) or {}).get(str(horizon))
         if v is not None:
             vals.append(float(v))
     if not vals:
-        return "No forecast data available."
+        return f"No {hazard} forecast data available."
     vals.sort()
     n = len(vals)
     avg = sum(vals) / n
     median = vals[n // 2]
-    danger = sum(1 for v in vals if v >= 103)
-    caution = sum(1 for v in vals if 90 <= v < 103)
-    return (
-        f"City summary at +{horizon}h (updated {payload.get('last_updated')}, "
-        f"model {payload.get('model')}): {n} tracts, average {avg:.1f}F, median {median:.1f}F, "
-        f"range {vals[0]:.1f}-{vals[-1]:.1f}F. In caution band (90-103F): {caution}; "
-        f"in danger band (>=103F): {danger}."
+    noun = HAZARD_NOUN[hazard]
+    head = (
+        f"City {noun} summary at +{horizon}h (updated {payload.get('last_updated')}, "
+        f"model {payload.get('model')}): {n} tracts, average {_fmt(hazard, avg)}, "
+        f"median {_fmt(hazard, median)}, range {_fmt(hazard, vals[0])}-{_fmt(hazard, vals[-1])}."
     )
+    if hazard == "heat":
+        danger = sum(1 for v in vals if v >= 103)
+        caution = sum(1 for v in vals if 90 <= v < 103)
+        return head + f" Caution band (90-103F): {caution}; danger (>=103F): {danger}."
+    elevated = sum(1 for v in vals if v >= 50)
+    high = sum(1 for v in vals if v >= 70)
+    return head + f" Elevated (>=50): {elevated}; high (>=70): {high}."
 
 
-def get_tract(tract: str = "", horizon: Any = 1, **_: Any) -> str:
+def multi_hazard_summary(horizon: Any = 1, **_: Any) -> str:
+    """City averages for heat, flood, and grid plus live feed inputs."""
+    horizon = int(horizon or 1)
+    payload = systemdata.fetch_forecast()
+    parts = [
+        f"Multi-hazard city snapshot at +{horizon}h (updated {payload.get('last_updated')}):"
+    ]
+    for hazard in ("heat", "flood", "grid"):
+        prop = HAZARD_PROP[hazard]
+        vals = [
+            float(v)
+            for f in _features(payload)
+            if (v := (f.get("properties", {}).get(prop) or {}).get(str(horizon))) is not None
+        ]
+        if not vals:
+            continue
+        avg = sum(vals) / len(vals)
+        hi_name, hi_v = max(
+            (
+                (_name(f.get("properties", {})), float(v))
+                for f in _features(payload)
+                if (v := (f.get("properties", {}).get(prop) or {}).get(str(horizon))) is not None
+            ),
+            key=lambda x: x[1],
+        )
+        parts.append(
+            f"- {HAZARD_NOUN[hazard]}: avg {_fmt(hazard, avg)}, "
+            f"highest {hi_name} {_fmt(hazard, hi_v)}."
+        )
+    parts.append(hazard_inputs())
+    return "\n".join(parts)
+
+
+def hazard_inputs(**_: Any) -> str:
+    """Live USGS gauges, ERCOT demand/capacity, and precip that drive flood/grid scores."""
+    try:
+        payload = systemdata.fetch_forecast()
+    except Exception:  # noqa: BLE001
+        return "Could not fetch CityForesight hazard inputs."
+    inp = payload.get("inputs") or {}
+    if not inp:
+        return "No hazard input payload on the current forecast."
+    lines = [
+        f"Live hazard inputs (updated {payload.get('last_updated')}):",
+        f"- Rain: {inp.get('precip_in_6h', 'n/a')} in over ~6h ({inp.get('precip_source', '?')}).",
+        (
+            f"- ERCOT grid: demand {inp.get('ercot_demand_mw')} MW / capacity "
+            f"{inp.get('ercot_capacity_mw')} MW "
+            f"({inp.get('ercot_utilization_pct')}% utilized, source {inp.get('ercot_source')}, "
+            f"as of {inp.get('ercot_timestamp', 'n/a')})."
+        ),
+        (
+            f"- USGS streams: {inp.get('usgs_gauge_count', 0)} gauges, city flood factor "
+            f"{inp.get('usgs_city_flood_factor')} (source {inp.get('usgs_source')})."
+        ),
+    ]
+    for g in (inp.get("usgs_top_gauges") or [])[:4]:
+        disc = (
+            f", {g.get('discharge_cfs')} cfs"
+            if g.get("discharge_cfs") is not None
+            else ""
+        )
+        lines.append(
+            f"  · {g.get('name') or g.get('site')}: {g.get('gage_height_ft')} ft{disc} "
+            f"(stress {g.get('stress')})"
+        )
+    lines.append(
+        "Flood scores blend USGS gauge stress + precip (+ mild NLCD runoff). "
+        "Grid scores blend ERCOT utilization + heat + population density."
+    )
+    return "\n".join(lines)
+
+
+def get_tract(tract: str = "", horizon: Any = 1, hazard: Any = "all", **_: Any) -> str:
     geoid, name = _resolve_geoid(tract)
     if not geoid:
         return f"No tract matched '{tract}'. Use a name like 'Census Tract 6.06' or a GEOID."
@@ -97,8 +224,14 @@ def get_tract(tract: str = "", horizon: Any = 1, **_: Any) -> str:
         d = systemdata.fetch_tract_forecast(geoid)
     except Exception:  # noqa: BLE001
         return f"Could not fetch forecast for {name}."
-    fc = d.get("forecasts", {})
-    series = "; ".join(f"+{h}h {float(v):.1f}F" for h, v in sorted(fc.items(), key=lambda kv: int(kv[0])))
+    hazard = str(hazard or "all").lower()
+    bits = []
+    if hazard in ("all", "heat", ""):
+        bits.append(f"heat {_series(d.get('forecasts') or {}, 'heat')}")
+    if hazard in ("all", "flood", "flooding"):
+        bits.append(f"flood {_series(d.get('flood_forecasts') or {}, 'flood')}")
+    if hazard in ("all", "grid", "power", "ercot"):
+        bits.append(f"grid {_series(d.get('grid_forecasts') or {}, 'grid')}")
     m = d.get("morphology") or {}
 
     def pct(x):
@@ -108,7 +241,7 @@ def get_tract(tract: str = "", horizon: Any = 1, **_: Any) -> str:
         f"impervious {pct(m.get('impervious_ratio'))}, canopy {pct(m.get('canopy_cover'))}, "
         f"drainage {pct(m.get('drainage_capacity'))}"
     )
-    return f"{name} ({geoid}) forecast: {series}. Morphology: {morph}."
+    return f"{name} ({geoid}) — {'; '.join(bits)}. Morphology: {morph}."
 
 
 def list_anomalies(min_severity: str = "watch", limit: Any = 8, **_: Any) -> str:
@@ -164,11 +297,12 @@ def lookup_address(query: str = "", **_: Any) -> str:
     if r.get("candidates") and not r.get("geoid"):
         cands = "; ".join(c.get("matched_address", "?") for c in r["candidates"][:4])
         return f"Multiple matches for '{query}': {cands}. Ask the user to pick one."
-    fc = r.get("forecasts", {})
-    series = "; ".join(f"+{h}h {float(v):.1f}F" for h, v in sorted(fc.items(), key=lambda kv: int(kv[0])))
+    heat = _series(r.get("forecasts") or {}, "heat")
+    flood = _series(r.get("flood_forecasts") or {}, "flood")
+    grid = _series(r.get("grid_forecasts") or {}, "grid")
     return (
         f"Address '{r.get('matched_address')}' is in {r.get('name')} ({r.get('geoid')}). "
-        f"Forecast: {series}. {r.get('coverage_note', '')}"
+        f"Heat: {heat}. Flood: {flood}. Grid: {grid}. {r.get('coverage_note', '')}"
     )
 
 
@@ -202,17 +336,29 @@ class Tool:
 TOOLS: dict[str, Tool] = {
     "rank_tracts": Tool(
         "rank_tracts",
-        "List hottest or coolest tracts. Args: order ('hottest'|'coolest'), horizon (1-6), limit.",
+        "List highest/lowest tracts for a hazard. Args: hazard ('heat'|'flood'|'grid'), "
+        "order ('hottest'|'coolest' or 'highest'|'lowest'), horizon (1-6), limit.",
         rank_tracts, "CityForesight forecast",
     ),
     "city_summary": Tool(
         "city_summary",
-        "City-wide heat stats at a horizon: average, median, range, caution/danger counts. Args: horizon.",
+        "City-wide stats for one hazard at a horizon. Args: hazard ('heat'|'flood'|'grid'), horizon.",
         city_summary, "CityForesight forecast",
+    ),
+    "multi_hazard_summary": Tool(
+        "multi_hazard_summary",
+        "City averages for heat + flood + grid together, plus live ERCOT/USGS/precip feeds. Args: horizon.",
+        multi_hazard_summary, "CityForesight forecast",
+    ),
+    "hazard_inputs": Tool(
+        "hazard_inputs",
+        "Live inputs behind flood/grid scores: USGS gauge stages, ERCOT demand/capacity, precip. No args.",
+        hazard_inputs, "CityForesight forecast",
     ),
     "get_tract": Tool(
         "get_tract",
-        "Full forecast (all horizons) + land-cover morphology for one tract. Args: tract (name or GEOID), horizon.",
+        "Forecast series + morphology for one tract. Args: tract (name or GEOID), "
+        "hazard ('all'|'heat'|'flood'|'grid'), horizon.",
         get_tract, "CityForesight forecast",
     ),
     "list_anomalies": Tool(
@@ -227,7 +373,7 @@ TOOLS: dict[str, Tool] = {
     ),
     "lookup_address": Tool(
         "lookup_address",
-        "Geocode a street address or place and return the tract forecast there. Args: query.",
+        "Geocode an address and return heat + flood + grid forecasts for that tract. Args: query.",
         lookup_address, "CityForesight forecast",
     ),
     "model_benchmark": Tool(
@@ -240,7 +386,6 @@ TOOLS: dict[str, Tool] = {
         "Search the knowledge base for definitions, protocols, and how the system works. Args: query.",
         search_knowledge, None,
     ),
-    # --- External Austin climate feeds (Open-Meteo + NWS, live) ---
     "current_weather": Tool(
         "current_weather",
         "Actual current Austin weather now: temp, feels-like, humidity, wind, precip, cloud, UV, pressure. No args.",

@@ -242,6 +242,145 @@
   background: rgba(185, 28, 28, 0.06);
 }
 
+.insightsStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid rgba(26, 60, 143, 0.1);
+  background: #f7fbff;
+  flex-shrink: 0;
+}
+
+.insightCard,
+.insightCardWide {
+  text-align: left;
+  border: 1px solid var(--cf-line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.55rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.insightCard {
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.insightCard:hover {
+  border-color: var(--cf-accent);
+}
+
+.insightCardActive {
+  border-color: var(--cf-accent);
+  box-shadow: 0 0 0 2px rgba(42, 143, 212, 0.18);
+}
+
+.insightCardLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-faint);
+}
+
+.insightCardValue {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--cf-ink);
+  line-height: 1.1;
+}
+
+.insightCardMeta,
+.liveFeedLine {
+  font-size: 0.68rem;
+  color: var(--cf-muted);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveFeedLine {
+  white-space: normal;
+}
+
+.hotspotBtn {
+  margin-top: 0.35rem;
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--cf-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hotspotBtn:hover {
+  text-decoration: underline;
+}
+
+.explainRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 1rem;
+  padding: 0.4rem 0.85rem 0.55rem;
+  border-bottom: 1px solid rgba(26, 60, 143, 0.08);
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.mapCue {
+  margin: 0;
+  padding: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--cf-muted);
+  flex: 1 1 auto;
+}
+
+.explainDetails {
+  font-size: 0.72rem;
+  color: var(--cf-muted);
+  max-width: 420px;
+}
+
+.explainDetails summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--cf-ink);
+}
+
+.explainDetails p {
+  margin: 0.35rem 0 0;
+  line-height: 1.45;
+}
+
+.explainMeta {
+  margin: 0.3rem 0 0;
+  font-size: 0.68rem;
+  color: var(--cf-faint);
+}
+
+.gaugeList {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.68rem;
+  color: var(--cf-muted);
+}
+
+.scoreExplain {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--cf-muted);
+}
+
 .searchGroup {
   display: flex;
   flex-direction: column;
@@ -698,6 +837,60 @@
   color: var(--cf-faint);
 }
 
+.anomalyPill {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  color: #9a3412;
+  background: rgba(251, 146, 60, 0.18);
+}
+
+.anom_watch {
+  color: #a16207;
+  background: rgba(250, 204, 21, 0.2);
+}
+
+.anom_alert {
+  color: #c2410c;
+  background: rgba(251, 146, 60, 0.22);
+}
+
+.anom_extreme {
+  color: #991b1b;
+  background: rgba(248, 113, 113, 0.22);
+}
+
+.confMeter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.45rem;
+}
+
+.confTrack {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(26, 60, 143, 0.12);
+  overflow: hidden;
+}
+
+.confFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2a8fd4, #1a3c8f);
+}
+
+.confLabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--cf-muted);
+}
+
 .hintStatLabel {
   font-size: 0.6rem;
   font-weight: 700;
@@ -811,6 +1004,10 @@
 
   .workspace {
     height: auto;
+  }
+
+  .insightsStrip {
+    grid-template-columns: 1fr 1fr;
   }
 
   .mapStage {

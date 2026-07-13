@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     geocode_viewbox_south: float = 30.0
     geocode_viewbox_east: float = -97.3
     geocode_viewbox_north: float = 30.6
+    # Multi-hazard enrichments
+    ercot_enabled: bool = True
+    urbansense_url: str = "http://localhost:8011"
+    anomaly_enrich: bool = True
 
 
 settings = Settings()

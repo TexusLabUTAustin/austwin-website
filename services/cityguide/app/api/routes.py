@@ -22,10 +22,19 @@ FORECAST_WORDS = {
     "hot", "hottest", "forecast", "forecasts", "now", "current", "currently",
     "heat", "temperature", "temp", "risk", "tract", "tracts", "warm", "warmest",
     "cool", "coolest", "today", "tonight", "degrees", "index", "hours", "horizon",
+    "flood", "flooding", "floods", "gauge", "gauges", "stream", "creek", "precip",
+    "rain", "rainfall", "grid", "ercot", "power", "outage", "load", "demand",
+    "stress", "hazard", "hazards", "usgs", "capacity", "utilization",
 }
 ANOMALY_WORDS = {
     "anomaly", "anomalies", "alert", "alerts", "watch", "extreme", "spike",
     "spikes", "unusual", "abnormal", "severity", "warning", "warnings", "flagged",
+}
+FLOOD_WORDS = {"flood", "flooding", "floods", "gauge", "gauges", "stream", "creek", "usgs"}
+GRID_WORDS = {"grid", "ercot", "power", "outage", "load", "demand", "capacity", "utilization"}
+INPUT_WORDS = {
+    "gauge", "gauges", "usgs", "ercot", "precip", "rain", "rainfall", "input",
+    "inputs", "feed", "feeds", "demand", "capacity", "stream",
 }
 
 SYSTEM_PROMPT = (
@@ -35,14 +44,15 @@ SYSTEM_PROMPT = (
     "operational. When you use a fact, say which source it came from. If the context does "
     "not contain the answer, say you don't have that information — never invent numbers, "
     "tract names, thresholds, or protocols. NWS heat-index bands: 80-90F Caution, "
-    "90-103F Extreme Caution, 103-124F Danger, 125F+ Extreme Danger."
+    "90-103F Extreme Caution, 103-124F Danger, 125F+ Extreme Danger. Flood and grid "
+    "scores are 0-100."
 )
 
 REFUSAL = (
     "I don't have grounded information to answer that confidently, so I won't guess. "
-    "I can help with: current heat-index forecasts and hottest tracts, active heat "
-    "anomalies/alerts, metric definitions (impervious ratio, tree canopy, drainage), "
-    "how the forecasting and anomaly models work, and Austin heat-response protocols."
+    "I can help with: live heat, flood, and grid scores; ERCOT/USGS feeds; hottest or "
+    "highest-risk tracts; heat anomalies; metric definitions; how the models work; and "
+    "Austin heat-response protocols."
 )
 
 
@@ -123,11 +133,27 @@ def chat(req: ChatRequest):
     sources: list[Source] = []
 
     if tokens & FORECAST_WORDS:
-        snap = systemdata.forecast_snapshot(req.horizon)
+        want_flood = bool(tokens & FLOOD_WORDS)
+        want_grid = bool(tokens & GRID_WORDS)
+        want_multi = (want_flood and want_grid) or "hazard" in tokens or "hazards" in tokens
+        if want_multi or (want_flood and want_grid):
+            snap = systemdata.multi_hazard_snapshot(req.horizon)
+        elif want_flood:
+            snap = systemdata.forecast_snapshot(req.horizon, hazard="flood")
+        elif want_grid:
+            snap = systemdata.forecast_snapshot(req.horizon, hazard="grid")
+        else:
+            snap = systemdata.forecast_snapshot(req.horizon, hazard="heat")
         if snap:
             live_blocks.append(snap)
             used_live.append("CityForesight forecast")
             sources.append(Source(type="live", title="CityForesight live forecast"))
+        if tokens & INPUT_WORDS or want_flood or want_grid:
+            inp = systemdata.inputs_snapshot()
+            if inp:
+                live_blocks.append(inp)
+                used_live.append("CityForesight hazard inputs")
+                sources.append(Source(type="live", title="CityForesight hazard inputs"))
     if tokens & ANOMALY_WORDS:
         snap = systemdata.anomaly_snapshot()
         if snap:

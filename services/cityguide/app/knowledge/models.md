@@ -1,10 +1,14 @@
 # CityForesight forecasting model
 
-CityForesight forecasts heat index 1 to 6 hours ahead for every Austin census tract. It uses a two-layer LSTM with Knowledge-Infused Learning (KIL): morphology features (impervious ratio, tree canopy, drainage capacity, population density) are injected at the dense layer so predictions reflect each tract's built environment. Input is a 24-hour lookback window of KAUS weather. Output is a per-tract choropleth updated every 15 minutes. The phase gate is at least 15% RMSE improvement over a plain LSTM on held-out Austin data.
+CityForesight produces 1 to 6 hour ahead scores for every Austin census tract across three hazards: heat index (Fahrenheit), flood risk (0-100), and grid stress (0-100). Heat uses a two-layer LSTM with Knowledge-Infused Learning (KIL): morphology features (impervious ratio, tree canopy, drainage capacity, population density) are injected at the dense layer so predictions reflect each tract's built environment. Input is a 24-hour lookback window of KAUS weather. The phase gate is at least 15% RMSE improvement over a plain LSTM on held-out Austin data.
+
+# Flood and grid live scores
+
+Flood risk is not a FEMA floodplain map. It is built from live USGS stream gage height and discharge near each tract, recent Open-Meteo rainfall, and a mild NLCD runoff modulator (impervious and drainage). Grid stress is built from live ERCOT system demand versus capacity (utilization), then raised where heat index and population density are higher. It is not an outage map. Both scores refresh with the forecast cache.
 
 # Forecast horizons and refresh
 
-Forecasts cover horizons +1h through +6h. A background scheduler re-runs inference every 15 minutes against the latest observations, and the API serves the most recent cached run with a last_updated timestamp. If the trained model is unavailable, a heuristic fallback estimates tract heat index from current conditions and morphology.
+Forecasts cover horizons +1h through +6h. A background scheduler re-runs inference every 15 minutes against the latest observations, and the API serves the most recent cached run with a last_updated timestamp. If the trained heat model is unavailable, a heuristic fallback estimates tract heat index from current conditions and morphology; flood and grid still use live USGS/ERCOT/precip inputs when available.
 
 # UrbanSense anomaly model
 

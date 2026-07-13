@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as Cesium from 'cesium'
 import type { FeatureCollection } from 'geojson'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
-import { heatIndexColor } from '../lib/forecastUtils'
+import { hazardMapColor } from '../lib/forecastInsights'
+import {
+  formatHazardValue,
+  getHazardValue,
+  type HazardId,
+} from '../lib/hazardUtils'
 import { fetchUtciMeta, sampleUtciAt } from '../lib/thermalApi'
 import { inUtciBounds, utciInsightLine, type UtciMeta, type UtciSample } from '../lib/utciUtils'
 import type { MapPin } from './ForecastMap'
@@ -66,11 +71,18 @@ function boundsSphere(geojson: FeatureCollection): Cesium.BoundingSphere {
 type Props = {
   geojson: FeatureCollection
   horizon: number
+  hazard?: HazardId
   onTractSelect?: (geoid: string) => void
   pin?: MapPin | null
 }
 
-export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: Props) {
+export default function ForecastGlobe({
+  geojson,
+  horizon,
+  hazard = 'heat',
+  onTractSelect,
+  pin,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<Cesium.Viewer | null>(null)
   const dataSourceRef = useRef<Cesium.GeoJsonDataSource | null>(null)
@@ -114,8 +126,10 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
   }, [])
   const viewRef = useRef({ heading: 0, pitch: PITCH_TILTED, range: 40000, base: 40000 })
   const horizonRef = useRef(horizon)
+  const hazardRef = useRef(hazard)
   const onSelectRef = useRef(onTractSelect)
   horizonRef.current = horizon
+  hazardRef.current = hazard
   onSelectRef.current = onTractSelect
 
   const applyView = useCallback((duration = 0.8) => {
@@ -360,7 +374,7 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
       if (cancelled || !viewerRef.current) return
       const prev = dataSourceRef.current
       if (prev) viewer.dataSources.remove(prev, true)
-      styleEntities(ds, horizonRef.current)
+      styleEntities(ds, horizonRef.current, hazardRef.current)
       viewer.dataSources.add(ds)
       dataSourceRef.current = ds
       // Frame the city only on first load — later live-data swaps keep the
@@ -378,11 +392,11 @@ export default function ForecastGlobe({ geojson, horizon, onTractSelect, pin }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geojson, applyView])
 
-  // Recolor when horizon changes (no reload).
+  // Recolor when horizon or hazard changes (no reload).
   useEffect(() => {
     const ds = dataSourceRef.current
-    if (ds) styleEntities(ds, horizon)
-  }, [horizon])
+    if (ds) styleEntities(ds, horizon, hazard)
+  }, [horizon, hazard])
 
   // Live radar overlay (RainViewer) — refresh every 5 min.
   useEffect(() => {
@@ -730,21 +744,54 @@ function CameraPopup({ cam, onClose }: { cam: CameraPoint; onClose: () => void }
   )
 }
 
-function styleEntities(ds: Cesium.GeoJsonDataSource, horizon: number) {
+function styleEntities(
+  ds: Cesium.GeoJsonDataSource,
+  horizon: number,
+  hazard: HazardId = 'heat',
+) {
   for (const entity of ds.entities.values) {
     if (!entity.polygon) continue
-    const forecasts = entity.properties?.forecasts?.getValue?.() as
-      | Record<string, number>
-      | undefined
-    const value = forecasts?.[String(horizon)] ?? 85
-    const hex = heatIndexColor(value)
+    const props = entity.properties
+    const raw: Record<string, unknown> = {}
+    if (props) {
+      for (const name of [
+        'forecasts',
+        'flood_forecasts',
+        'grid_forecasts',
+        'anomaly_severity',
+        'NAME',
+        'GEOID',
+      ]) {
+        try {
+          raw[name] = props[name]?.getValue?.()
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    const value = getHazardValue(raw, hazard, horizon) ?? (hazard === 'heat' ? 85 : 40)
+    const hex = hazardMapColor(hazard, value)
     entity.polygon.material = new Cesium.ColorMaterialProperty(cesiumColor(hex))
     entity.polygon.classificationType = new Cesium.ConstantProperty(
       Cesium.ClassificationType.TERRAIN,
     )
-    const name = entity.properties?.NAME?.getValue?.() ?? entity.properties?.GEOID?.getValue?.()
+    const severity = raw.anomaly_severity as string | undefined
+    if (severity === 'alert' || severity === 'extreme') {
+      entity.polygon.outline = new Cesium.ConstantProperty(true)
+      entity.polygon.outlineColor = new Cesium.ConstantProperty(
+        Cesium.Color.fromCssColorString(severity === 'extreme' ? '#b91c1c' : '#ea580c'),
+      )
+      entity.polygon.outlineWidth = new Cesium.ConstantProperty(2)
+    }
+    const name = raw.NAME ?? raw.GEOID
+    const label =
+      hazard === 'heat'
+        ? `Heat index (+${horizon}h)`
+        : hazard === 'flood'
+          ? `Flood risk (+${horizon}h)`
+          : `Grid stress (+${horizon}h)`
     entity.description = new Cesium.ConstantProperty(
-      `<strong>${name}</strong><br/>Heat index (+${horizon}h): <strong>${value.toFixed(1)}°F</strong>`,
+      `<strong>${name}</strong><br/>${label}: <strong>${formatHazardValue(hazard, value)}</strong>`,
     )
   }
 }

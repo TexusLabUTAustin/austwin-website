@@ -40,6 +40,11 @@ def forecast_tract(geoid: str):
                 "geoid": geoid,
                 "name": feat["properties"].get("NAME"),
                 "forecasts": feat["properties"].get("forecasts", {}),
+                "flood_forecasts": feat["properties"].get("flood_forecasts", {}),
+                "grid_forecasts": feat["properties"].get("grid_forecasts", {}),
+                "confidence": feat["properties"].get("confidence", {}),
+                "anomaly_severity": feat["properties"].get("anomaly_severity"),
+                "anomaly_score": feat["properties"].get("anomaly_score"),
                 "morphology": {
                     k: feat["properties"].get(k)
                     for k in (

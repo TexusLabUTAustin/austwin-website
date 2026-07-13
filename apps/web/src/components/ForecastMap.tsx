@@ -4,7 +4,12 @@ import L from 'leaflet'
 import type { PathOptions } from 'leaflet'
 import type { Feature, FeatureCollection } from 'geojson'
 import 'leaflet/dist/leaflet.css'
-import { heatIndexColor } from '../lib/forecastUtils'
+import { hazardMapColor } from '../lib/forecastInsights'
+import {
+  formatHazardValue,
+  getHazardValue,
+  type HazardId,
+} from '../lib/hazardUtils'
 import styles from './ForecastMap.module.css'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -32,6 +37,7 @@ export type MapPin = {
 type Props = {
   geojson: FeatureCollection
   horizon: number
+  hazard?: HazardId
   onTractSelect?: (geoid: string) => void
   pin?: MapPin | null
 }
@@ -59,28 +65,50 @@ function MapFlyTo({ pin }: { pin: MapPin | null | undefined }) {
   return null
 }
 
-export default function ForecastMap({ geojson, horizon, onTractSelect, pin }: Props) {
+function anomalyStroke(severity?: string): { color: string; weight: number } {
+  if (severity === 'extreme') return { color: '#b91c1c', weight: 2.2 }
+  if (severity === 'alert') return { color: '#ea580c', weight: 1.8 }
+  if (severity === 'watch') return { color: '#ca8a04', weight: 1.2 }
+  return { color: '#1a3c8f', weight: 0.5 }
+}
+
+export default function ForecastMap({
+  geojson,
+  horizon,
+  hazard = 'heat',
+  onTractSelect,
+  pin,
+}: Props) {
   const style = (feature?: Feature): PathOptions => {
-    const forecasts = feature?.properties?.forecasts as Record<string, number> | undefined
-    const value = forecasts?.[String(horizon)] ?? 85
+    const props = (feature?.properties ?? {}) as Record<string, unknown>
+    const value = getHazardValue(props, hazard, horizon) ?? (hazard === 'heat' ? 85 : 40)
+    const stroke = anomalyStroke(props.anomaly_severity as string | undefined)
     return {
-      fillColor: heatIndexColor(value),
+      fillColor: hazardMapColor(hazard, value),
       fillOpacity: 0.78,
-      color: '#1a3c8f',
-      weight: 0.5,
-      opacity: 0.55,
+      color: stroke.color,
+      weight: stroke.weight,
+      opacity: 0.7,
     }
   }
 
   const onEach = (feature: Feature, layer: L.Layer) => {
-    const forecasts = feature.properties?.forecasts as Record<string, number> | undefined
-    const value = forecasts?.[String(horizon)]
-    const name = feature.properties?.NAME ?? feature.properties?.GEOID
+    const props = (feature.properties ?? {}) as Record<string, unknown>
+    const value = getHazardValue(props, hazard, horizon)
+    const name = props.NAME ?? props.GEOID
+    const label =
+      hazard === 'heat'
+        ? `Heat index (+${horizon}h)`
+        : hazard === 'flood'
+          ? `Flood risk (+${horizon}h)`
+          : `Grid stress (+${horizon}h)`
     layer.bindPopup(
-      `<strong>${name}</strong><br/>Heat index (+${horizon}h): <strong>${value?.toFixed(1) ?? '—'}°F</strong>`,
+      `<strong>${name}</strong><br/>${label}: <strong>${
+        value != null ? formatHazardValue(hazard, value) : '—'
+      }</strong>`,
     )
     layer.on('click', () => {
-      const geoid = feature.properties?.GEOID as string
+      const geoid = props.GEOID as string
       if (geoid && onTractSelect) onTractSelect(geoid)
     })
   }
@@ -98,27 +126,18 @@ export default function ForecastMap({ geojson, horizon, onTractSelect, pin }: Pr
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <GeoJSON
-          key={horizon}
+          key={`${horizon}-${hazard}-${geojson.features.length}`}
           data={geojson}
           style={style}
           onEachFeature={onEach}
         />
+        <FitBounds geojson={geojson} />
+        <MapFlyTo pin={pin} />
         {pin && (
           <Marker position={[pin.lat, pin.lon]}>
-            <Popup>
-              <strong>{pin.label ?? 'Your search'}</strong>
-              {pin.heatIndex !== undefined && (
-                <>
-                  <br />
-                  Heat index (+{horizon}h):{' '}
-                  <strong>{pin.heatIndex.toFixed(1)}°F</strong>
-                </>
-              )}
-            </Popup>
+            {pin.label && <Popup>{pin.label}</Popup>}
           </Marker>
         )}
-        {!pin && <FitBounds geojson={geojson} />}
-        <MapFlyTo pin={pin} />
       </MapContainer>
     </div>
   )

@@ -32,6 +32,11 @@ def _tract_forecast_payload(
             "geoid": geoid,
             "name": props.get("NAME"),
             "forecasts": props.get("forecasts", {}),
+            "flood_forecasts": props.get("flood_forecasts", {}),
+            "grid_forecasts": props.get("grid_forecasts", {}),
+            "confidence": props.get("confidence", {}),
+            "anomaly_severity": props.get("anomaly_severity"),
+            "anomaly_score": props.get("anomaly_score"),
             "morphology": {
                 k: props.get(k)
                 for k in (

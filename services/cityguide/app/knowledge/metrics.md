@@ -25,3 +25,15 @@ Population density is residents per unit area in a tract, used as a vulnerabilit
 # Morphology features
 
 "Morphology" refers to the physical land-cover features of a tract: impervious ratio, tree canopy cover, drainage capacity, and population density. These are the Knowledge-Infused Learning (KIL) features injected into CityForesight's model so forecasts reflect the built environment, not just weather.
+
+# Flood risk score
+
+Flood risk is a 0 to 100 score per tract. Higher means greater near-term flood concern from live USGS gage stress near the tract plus recent rainfall, with a light boost where impervious cover is high and drainage is low. It is not a regulatory floodplain designation.
+
+# Grid stress score
+
+Grid stress is a 0 to 100 score per tract. Higher means greater concern from ERCOT system utilization (demand divided by capacity), local heat index (cooling demand), and population density. It is not a real-time outage map for a specific feeder.
+
+# USGS gauges and ERCOT feeds
+
+CityForesight publishes live hazard inputs with each forecast: Open-Meteo precip inches, ERCOT demand/capacity megawatts and utilization percent, and top Austin USGS gauges with gage height (ft), discharge (cfs), and a normalized stress factor.

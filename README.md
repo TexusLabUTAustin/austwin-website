@@ -102,8 +102,8 @@ docker-compose up
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Service status |
-| `GET /forecasts/current` | GeoJSON choropleth + 1–6 hr heat index per tract |
-| `GET /forecasts/tract/:geoid` | Single-tract forecast series |
+| `GET /forecasts/current` | GeoJSON choropleth: heat °F + flood/grid 0–100 scores, confidence, optional anomaly tags |
+| `GET /forecasts/tract/:geoid` | Single-tract multi-hazard series + confidence |
 | `GET /forecasts/search?q=` | Geocode address → tract forecast (or candidate list) |
 | `GET /forecasts/lookup?lat=&lon=` | Point-in-tract forecast lookup |
 | `GET /metrics/benchmark` | Baseline vs KIL RMSE benchmark |
@@ -166,9 +166,11 @@ Configure a cron (every 15 min) to `POST /admin/refresh` or rely on the built-in
 
 **Phase 1 (delivered):** CityForesight — LSTM + KIL land-cover features, tract choropleth UI, benchmark evaluation.
 
+**Phase 1b (delivered):** Multi-hazard CityForesight — heat + flood-risk + grid-stress heads, Open-Meteo precip / ERCOT load inputs, confidence scores, UrbanSense anomaly enrich, Heat|Flood|Grid UI switcher.
+
 **Phase 2 (delivered):** UrbanSense — spatial/temporal/morphology anomaly scoring, RDFLib ontology (Turtle + JSON-LD), `/urbansense` dashboard, OnePager Data node integration.
 
-**Deferred (Phase 2b–4):** Neo4j knowledge graph, ERCOT load, MODIS LST, CityGML ingestion, CityGuide, CityCommand, C3AN evaluation.
+**Deferred (Phase 2b–4):** Neo4j knowledge graph, full MODIS LST labels, CityGML ingestion, CityCommand RL, C3AN evaluation.
 
 ## License
 

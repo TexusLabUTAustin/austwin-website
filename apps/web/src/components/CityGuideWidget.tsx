@@ -16,16 +16,16 @@ type Props = {
 
 const SUGGESTIONS = [
   'Which tracts are hottest right now?',
+  'Where is flood risk highest?',
+  'What is ERCOT utilization right now?',
   'Any active heat anomalies?',
-  'What does impervious ratio mean?',
-  'When should we open cooling centers?',
 ]
 
 const GREETING: Message = {
   role: 'assistant',
   text:
-    "I'm CityGuide. Ask about live heat forecasts, anomalies, metric definitions, " +
-    "the models, or heat-response protocols. I answer only from grounded data — " +
+    "I'm CityGuide. Ask about live heat, flood, and grid scores, ERCOT/USGS feeds, " +
+    "anomalies, metrics, or protocols. I answer only from grounded data — " +
     "if I'm not sure, I'll say so.",
 }
 

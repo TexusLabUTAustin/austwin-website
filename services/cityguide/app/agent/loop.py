@@ -50,7 +50,7 @@ _ACTION_SCHEMA = {
 
 REFUSAL = (
     "I don't have grounded information to answer that confidently, so I won't guess. "
-    "I can help with live heat forecasts and rankings, tract detail and land cover, "
+    "I can help with live heat, flood, and grid scores, ERCOT/USGS feeds, tract detail, "
     "heat anomalies, address lookups, model accuracy, and how the system works."
 )
 
@@ -67,16 +67,19 @@ def _system_prompt() -> str:
         "action is 'final_answer'). Call one tool at a time. Chain multiple tools for "
         "multi-step questions (e.g. find the hottest tract, then get its detail). To "
         "COMPARE tracts, first call rank_tracts to learn their names, then call get_tract "
-        "for each. CRITICAL GROUNDING RULE: report ONLY values that appear in a tool "
+        "for each. For flood or grid questions, set hazard='flood' or hazard='grid' on "
+        "rank_tracts/city_summary/get_tract, or call multi_hazard_summary / hazard_inputs. "
+        "CRITICAL GROUNDING RULE: report ONLY values that appear in a tool "
         "observation. You must call a tool for EVERY data type the user asks about — if "
         "they ask about air quality, call air_quality; about current weather, call "
-        "current_weather; etc. NEVER estimate, recall, or invent a number, tract, AQI, or "
-        "threshold. In the 'answer' string, write plain sentences and DO NOT use raw line "
-        "breaks — keep it to flowing prose. When you have enough grounded information, set "
-        "action to 'final_answer' with the complete answer in 'answer', citing the data "
-        "sources. If tools return nothing relevant, say you don't have that information.\n"
+        "current_weather; about ERCOT or gauges, call hazard_inputs; etc. NEVER estimate, "
+        "recall, or invent a number, tract, AQI, or threshold. In the 'answer' string, "
+        "write plain sentences and DO NOT use raw line breaks — keep it to flowing prose. "
+        "When you have enough grounded information, set action to 'final_answer' with the "
+        "complete answer in 'answer', citing the data sources. If tools return nothing "
+        "relevant, say you don't have that information.\n"
         "NWS heat-index bands: 80-90F Caution, 90-103F Extreme Caution, 103-124F Danger, "
-        "125F+ Extreme Danger."
+        "125F+ Extreme Danger. Flood and grid scores are 0-100 (not Fahrenheit)."
     )
 
 

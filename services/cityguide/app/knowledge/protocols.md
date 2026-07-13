@@ -12,4 +12,4 @@ Severity levels map to operator posture: watch means monitor and prepare; alert 
 
 # Flood and grid context
 
-Beyond heat, AusTwin tracks flood risk (driven by high impervious ratio plus low drainage capacity during heavy rain) and grid stress (ERCOT load during extreme temperatures). During compound events — heat plus grid strain — cooling-center siting must account for power availability.
+Beyond heat, AusTwin tracks live flood risk (USGS gauges + recent precip, modulated by impervious/drainage) and grid stress (ERCOT demand/capacity plus heat and density). During compound events — heat plus grid strain — cooling-center siting must account for power availability. Rising stream stress with heavy rain warrants monitoring low-drainage, high-impervious tracts even when heat is moderate.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate baseline vs KIL on held-out test set. Phase gate: >=15% RMSE improvement."""
+"""Evaluate baseline vs KIL on held-out set. Phase gate: >=15% heat RMSE improvement."""
 
 from __future__ import annotations
 
@@ -30,7 +30,8 @@ def tract_rmse(model, loader, device, kil: bool = False) -> tuple[float, list[fl
         if kil:
             x, morph, y = batch[0], batch[1], batch[2]
             x, morph, y = x.to(device), morph.to(device), y.to(device)
-            pred = model(x, morph)
+            out = model(x, morph)
+            pred = out[0] if isinstance(out, tuple) else out
         else:
             x, y = batch[0].to(device), batch[1].to(device)
             pred = model(x)
@@ -41,6 +42,21 @@ def tract_rmse(model, loader, device, kil: bool = False) -> tuple[float, list[fl
     return float(np.mean(rmses)), rmses
 
 
+@torch.no_grad()
+def multitask_rmse(model, loader, device) -> dict:
+    model.eval()
+    se = {"heat": 0.0, "flood": 0.0, "grid": 0.0}
+    n = 0
+    for batch in loader:
+        x, morph, y, _sy, y_f, y_g = [b.to(device) for b in batch]
+        heat, flood, grid = model(x, morph)
+        se["heat"] += ((heat - y) ** 2).sum().item()
+        se["flood"] += ((flood - y_f) ** 2).sum().item()
+        se["grid"] += ((grid - y_g) ** 2).sum().item()
+        n += y.numel()
+    return {k: round((v / n) ** 0.5, 4) for k, v in se.items()}
+
+
 def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     df = load_asos()
@@ -48,7 +64,11 @@ def main() -> None:
     _, val_df, _ = train_val_test_split(df)
 
     kil_ds = WeatherSequenceDataset(
-        val_df, lookback=settings.lookback_hours, use_kil=True, morph_samples=6
+        val_df,
+        lookback=settings.lookback_hours,
+        use_kil=True,
+        morph_samples=6,
+        multitask=True,
     )
     baseline_ds = BaselineEvalWrapper(kil_ds)
     baseline_loader = DataLoader(baseline_ds, batch_size=256)
@@ -67,10 +87,15 @@ def main() -> None:
         num_layers=baseline_ckpt.get("num_layers", 2),
     ).to(device)
     baseline.load_state_dict(baseline_ckpt["model_state"])
+    multitask = bool(kil_ckpt.get("multitask", False)) or any(
+        k.startswith("flood_head") for k in kil_ckpt["model_state"]
+    )
     kil = KILLSTM(
-        horizons=len(settings.horizons), hidden_size=kil_ckpt.get("hidden_size", 96)
+        horizons=len(settings.horizons),
+        hidden_size=kil_ckpt.get("hidden_size", 96),
+        multitask=multitask,
     ).to(device)
-    kil.load_state_dict(kil_ckpt["model_state"])
+    kil.load_state_dict(kil_ckpt["model_state"], strict=False)
 
     baseline_rmse, baseline_horizon = tract_rmse(baseline, baseline_loader, device, kil=False)
     kil_rmse, kil_horizon = tract_rmse(kil, kil_loader, device, kil=True)
@@ -78,7 +103,7 @@ def main() -> None:
 
     result = {
         "metric": "tract_heat_index_rmse",
-        "description": "Held-out validation split: plain LSTM station forecast vs tract targets; KIL uses morphology",
+        "description": "Held-out validation: plain LSTM vs KIL heat; multitask reports flood/grid RMSE",
         "baseline_rmse": round(baseline_rmse, 4),
         "kil_rmse": round(kil_rmse, 4),
         "improvement_pct": round(improvement, 2),
@@ -87,7 +112,10 @@ def main() -> None:
         "baseline_horizon_rmse": [round(r, 4) for r in baseline_horizon],
         "kil_horizon_rmse": [round(r, 4) for r in kil_horizon],
         "horizons_hours": settings.horizons,
+        "multitask": multitask,
     }
+    if multitask:
+        result["kil_multitask_rmse"] = multitask_rmse(kil, kil_loader, device)
 
     (settings.artifacts_dir / "benchmark.json").write_text(json.dumps(result, indent=2))
     print(json.dumps(result, indent=2))
