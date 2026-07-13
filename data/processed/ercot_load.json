@@ -1,1 +1,1 @@
-{"fetched_unix": 1783925284.986882, "load_factor": 0.7124, "demand_mw": 60022.0, "capacity_mw": 84257.0, "reserve_mw": 24235.0, "utilization_pct": 71.24, "timestamp": "2026-07-14 00:00:00-0500", "source": "ercot_supply_demand", "last_updated": "2026-07-13 01:45:00-0500"}
+{"fetched_unix": 1783925769.029305, "load_factor": 0.7125, "demand_mw": 60022.0, "capacity_mw": 84240.0, "reserve_mw": 24218.0, "utilization_pct": 71.25, "timestamp": "2026-07-14 00:00:00-0500", "source": "ercot_supply_demand", "last_updated": "2026-07-13 01:55:00-0500"}
