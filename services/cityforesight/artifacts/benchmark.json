@@ -1,0 +1,39 @@
+{
+  "metric": "tract_heat_index_rmse",
+  "description": "Held-out validation: plain LSTM vs KIL heat; multitask reports flood/grid RMSE",
+  "baseline_rmse": 6.2214,
+  "kil_rmse": 4.7046,
+  "improvement_pct": 24.38,
+  "gate_threshold_pct": 15.0,
+  "gate_passed": true,
+  "baseline_horizon_rmse": [
+    6.4828,
+    5.8404,
+    5.5945,
+    5.8014,
+    6.3904,
+    7.2193
+  ],
+  "kil_horizon_rmse": [
+    3.8789,
+    4.1768,
+    4.5447,
+    4.8829,
+    5.1974,
+    5.547
+  ],
+  "horizons_hours": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "multitask": true,
+  "kil_multitask_rmse": {
+    "heat": 4.7394,
+    "flood": 0.1791,
+    "grid": 2.8947
+  }
+}

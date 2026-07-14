@@ -1,3 +1,5 @@
+# Build from the REPO ROOT context so runtime data (data/ontology, data/processed)
+# can be copied alongside the service. render.yaml sets dockerContext: .
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -6,13 +8,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml ./
+COPY services/urbansense/pyproject.toml ./
 RUN pip install --no-cache-dir uv && uv pip install --system -e .
 
-COPY app ./app
-COPY scripts ./scripts
+COPY services/urbansense/app ./app
+COPY services/urbansense/scripts ./scripts
 
 RUN mkdir -p artifacts
+
+# Baked runtime data (ontology TTL/JSON-LD + processed inputs)
+COPY data/ontology ./data/ontology
+COPY data/processed ./data/processed
 
 ENV URBANSENSE_DATA_DIR=/app/data
 ENV URBANSENSE_ARTIFACTS_DIR=/app/artifacts

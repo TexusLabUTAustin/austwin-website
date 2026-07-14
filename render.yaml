@@ -3,7 +3,7 @@ services:
     name: cityforesight
     runtime: docker
     dockerfilePath: ./services/cityforesight/Dockerfile
-    dockerContext: ./services/cityforesight
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: CITYFORESIGHT_DATA_DIR
@@ -18,7 +18,7 @@ services:
     name: urbansense
     runtime: docker
     dockerfilePath: ./services/urbansense/Dockerfile
-    dockerContext: ./services/urbansense
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: URBANSENSE_DATA_DIR
