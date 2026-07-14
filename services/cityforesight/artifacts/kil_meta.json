@@ -1,0 +1,5 @@
+{
+  "val_rmse": 4.739373799349129,
+  "model": "kil_lstm",
+  "multitask": true
+}

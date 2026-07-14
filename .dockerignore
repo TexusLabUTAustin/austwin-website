@@ -1,0 +1,21 @@
+# Keep the Docker build context small when building from repo root.
+# Only services/*, data/processed (small files) and data/ontology are needed.
+.git
+.github
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.pytest_cache
+apps
+packages
+# Heavy / training-only data — not needed at inference
+data/raw
+data/processed/*.parquet
+data/processed/*.tif
+# Repo docs & stray assets
+*.pdf
+UTCI_SS.png
+colab_logo.png
+mobius.svg
+*.md

@@ -38,8 +38,16 @@ data/raw/
 data/processed/*.parquet
 data/processed/*.csv
 !data/processed/.gitkeep
+# Runtime data needed baked into the deployed image (small; keep tracked)
+!data/processed/tract_morphology.csv
+!data/processed/asos_hourly.csv
 services/cityforesight/artifacts/*
 !services/cityforesight/artifacts/.gitkeep
+# Runtime model + metrics needed at inference (keep tracked)
+!services/cityforesight/artifacts/kil_lstm.pt
+!services/cityforesight/artifacts/kil_meta.json
+!services/cityforesight/artifacts/benchmark.json
+!services/cityforesight/artifacts/baseline_meta.json
 services/urbansense/artifacts/*
 !services/urbansense/artifacts/.gitkeep
 
