@@ -3,10 +3,10 @@
   "outputDirectory": "apps/web/dist",
   "installCommand": "npm install",
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://YOUR_CITYFORESIGHT_API_HOST/:path*"
-    },
+    { "source": "/api/sense/:path*", "destination": "https://YOUR_URBANSENSE_API_HOST/:path*" },
+    { "source": "/api/guide/:path*", "destination": "https://YOUR_CITYGUIDE_API_HOST/:path*" },
+    { "source": "/api/thermal/:path*", "destination": "https://YOUR_THERMALSCAPE_API_HOST/:path*" },
+    { "source": "/api/:path*", "destination": "https://YOUR_CITYFORESIGHT_API_HOST/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
