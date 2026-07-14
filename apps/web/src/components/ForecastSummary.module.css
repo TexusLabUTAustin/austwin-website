@@ -1,0 +1,94 @@
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem 0.65rem;
+  padding: 0.65rem 1.25rem;
+  border-bottom: 1px solid rgba(26, 60, 143, 0.08);
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.05rem;
+  min-width: 0;
+  flex: 1 1 110px;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(248, 251, 255, 0.95);
+  border: 1px solid rgba(26, 60, 143, 0.06);
+}
+
+.statLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.statValue {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1a3c8f;
+  line-height: 1.15;
+}
+
+.statHint {
+  font-size: 0.68rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.riskBar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  flex: 1.4 1 180px;
+  min-width: 160px;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(248, 251, 255, 0.95);
+  border: 1px solid rgba(26, 60, 143, 0.06);
+}
+
+.riskSegments {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.riskSegment {
+  min-width: 3px;
+  transition: flex 0.2s;
+}
+
+.riskLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  font-size: 0.64rem;
+  color: #64748b;
+}
+
+@media (max-width: 720px) {
+  .summary {
+    padding: 0.55rem 0.85rem;
+  }
+
+  .stat {
+    flex: 1 1 calc(50% - 0.5rem);
+  }
+
+  .riskBar {
+    flex: 1 1 100%;
+  }
+}

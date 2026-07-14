@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: cityforesight
+    runtime: docker
+    dockerfilePath: ./services/cityforesight/Dockerfile
+    dockerContext: ./services/cityforesight
+    healthCheckPath: /health
+    envVars:
+      - key: CITYFORESIGHT_DATA_DIR
+        value: /app/data
+      - key: CITYFORESIGHT_ARTIFACTS_DIR
+        value: /app/artifacts
+      # Set in Render dashboard (production secret):
+      - key: CITYFORESIGHT_ADMIN_TOKEN
+        sync: false
+
+  - type: web
+    name: urbansense
+    runtime: docker
+    dockerfilePath: ./services/urbansense/Dockerfile
+    dockerContext: ./services/urbansense
+    healthCheckPath: /health
+    envVars:
+      - key: URBANSENSE_DATA_DIR
+        value: /app/data
+      - key: URBANSENSE_ARTIFACTS_DIR
+        value: /app/artifacts
+      - key: URBANSENSE_ONTOLOGY_DIR
+        value: /app/data/ontology
+      # Internal service-to-service URL. Set in dashboard to the cityforesight
+      # internal address WITH scheme, e.g. http://cityforesight:8000
+      # (httpx client requires http://; Render's hostport omits the scheme).
+      - key: URBANSENSE_CITYFORESIGHT_URL
+        sync: false
+      # Set in Render dashboard (production secret):
+      - key: URBANSENSE_ADMIN_TOKEN
+        sync: false
